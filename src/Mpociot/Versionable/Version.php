@@ -48,10 +48,8 @@ class Version extends Eloquent
     public function getModel()
     {
         $model = new $this->versionable_type();
-        $model->unguard();
-        $model->fill(unserialize($this->model_data));
+        $model->setRawAttributes(unserialize($this->model_data), true);
         $model->exists = true;
-        $model->reguard();
         return $model;
     }
 

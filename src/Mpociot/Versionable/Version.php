@@ -1,12 +1,13 @@
 <?php
 namespace Mpociot\Versionable;
 
-use Illuminate\Support\Facades\Config;
-use Illuminate\Database\Eloquent\Model as Eloquent;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as Eloquent;
+use Illuminate\Support\Facades\Config;
 
 /**
  * Class Version
+ *
  * @package Mpociot\Versionable
  */
 class Version extends Eloquent
@@ -24,6 +25,7 @@ class Version extends Eloquent
 
     /**
      * Sets up the relation
+     *
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
     public function versionable()
@@ -33,16 +35,19 @@ class Version extends Eloquent
 
     /**
      * Return the user responsible for this version
+     *
      * @return mixed
      */
     public function getResponsibleUserAttribute()
     {
         $model = Config::get("auth.model");
+
         return $model::find($this->user_id);
     }
 
     /**
      * Return the versioned model
+     *
      * @return Model
      */
     public function getModel()
@@ -50,6 +55,7 @@ class Version extends Eloquent
         $model = new $this->versionable_type();
         $model->setRawAttributes(unserialize($this->model_data), true);
         $model->exists = true;
+
         return $model;
     }
 
@@ -62,12 +68,13 @@ class Version extends Eloquent
     public function revert()
     {
         $model = $this->getModel();
-        unset( $model->{$model->getCreatedAtColumn()} );
-        unset( $model->{$model->getUpdatedAtColumn()} );
+        unset($model->{$model->getCreatedAtColumn()});
+        unset($model->{$model->getUpdatedAtColumn()});
         if (method_exists($model, 'getDeletedAtColumn')) {
-            unset( $model->{$model->getDeletedAtColumn()} );
+            unset($model->{$model->getDeletedAtColumn()});
         }
         $model->save();
+
         return $model;
     }
 
@@ -76,26 +83,55 @@ class Version extends Eloquent
      * If no version is provided, it will be diffed against the current version.
      *
      * @param Version|null $againstVersion
+     *
      * @return array
      */
     public function diff(Version $againstVersion = null)
     {
         $model = $this->getModel();
-        $diff  = $againstVersion ? $againstVersion->getModel() : $this->versionable()->withTrashed()->first()->currentVersion()->getModel();
+        $diff = $againstVersion
+            ? $againstVersion->getModel()
+            : $this->versionable()
+                   ->withTrashed()
+                   ->first()
+                   ->currentVersion()
+                   ->getModel();
 
         $diffArray = array_diff_assoc($diff->getAttributes(), $model->getAttributes());
 
-        if (isset( $diffArray[ $model->getCreatedAtColumn() ] )) {
-            unset( $diffArray[ $model->getCreatedAtColumn() ] );
+        if (isset($diffArray[ $model->getCreatedAtColumn() ])) {
+            unset($diffArray[ $model->getCreatedAtColumn() ]);
         }
-        if (isset( $diffArray[ $model->getUpdatedAtColumn() ] )) {
-            unset( $diffArray[ $model->getUpdatedAtColumn() ] );
+        if (isset($diffArray[ $model->getUpdatedAtColumn() ])) {
+            unset($diffArray[ $model->getUpdatedAtColumn() ]);
         }
-        if (method_exists($model, 'getDeletedAtColumn') && isset( $diffArray[ $model->getDeletedAtColumn() ] )) {
-            unset( $diffArray[ $model->getDeletedAtColumn() ] );
+        if (method_exists($model, 'getDeletedAtColumn') && isset($diffArray[ $model->getDeletedAtColumn() ])) {
+            unset($diffArray[ $model->getDeletedAtColumn() ]);
         }
 
         return $diffArray;
+    }
+
+    /**
+     * @param $value
+     *
+     * @return string
+     */
+    public function setModelDataAttribute($value)
+    {
+        $this->attributes['model_data'] = base64_encode($value);
+
+        return $this;
+    }
+
+    /**
+     * @param $value
+     *
+     * @return string
+     */
+    public function getModelDataAttribute($value)
+    {
+        return base64_decode($value);
     }
 
 }

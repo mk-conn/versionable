@@ -131,6 +131,10 @@ class Version extends Eloquent
      */
     public function getModelDataAttribute($value)
     {
+        if (is_resource($value)) {
+            $value = stream_get_contents($value);
+        }
+
         return base64_decode($value);
     }
 

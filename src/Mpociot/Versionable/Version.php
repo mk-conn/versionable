@@ -52,9 +52,15 @@ class Version extends Eloquent
      */
     public function getModel()
     {
+        $modelData = is_resource($this->model_data)
+            ? stream_get_contents($this->model_data)
+            : $this->model_data;
+
         $model = new $this->versionable_type();
-        $model->setRawAttributes(unserialize($this->model_data), true);
+        $model->unguard();
+        $model->fill(unserialize($modelData));
         $model->exists = true;
+        $model->reguard();
 
         return $model;
     }

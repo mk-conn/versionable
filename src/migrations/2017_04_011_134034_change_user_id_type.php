@@ -14,7 +14,7 @@ class ChangeUserIdType extends Migration {
 	{
 		Schema::table('versions', function(Blueprint $table)
 		{
-			$table->string('user_id', 55)->change();
+			$table->string('user_id', 60)->change();
 		});
 	}
 
@@ -25,10 +25,7 @@ class ChangeUserIdType extends Migration {
 	 */
 	public function down()
 	{
-//		Schema::table('versions', function(Blueprint $table)
-//		{
-//			$table->integer('user_id')->change();
-//		});
+
 	}
 
 }
